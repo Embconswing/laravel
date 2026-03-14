@@ -19,11 +19,28 @@ class AppointmentTrackingController extends Controller
      ========================================================= */
  public function index(Request $request)
 {
-   $query = Appointment::where('status', Appointment::STATUS_ACCEPTED)
-    ->whereNull('current_assignee_id')
-    ->orderBy('appointment_date', 'desc');
+    $query = Appointment::where('status', Appointment::STATUS_ACCEPTED)
+        ->whereNull('current_assignee_id');
 
-    // 🔹 Service Category Filter
+
+    /* 🔹 DATE FILTER */
+
+    if ($request->filled('from_date')) {
+        $query->whereDate('appointment_date', '>=', $request->from_date);
+    }
+
+    if ($request->filled('to_date')) {
+        $query->whereDate('appointment_date', '<=', $request->to_date);
+    }
+
+    // Default to today if no date selected
+    if (!$request->filled('from_date') && !$request->filled('to_date')) {
+        $query->whereDate('appointment_date', now());
+    }
+
+
+    /* 🔹 SERVICE FILTER */
+
     if ($request->filled('service')) {
 
         switch ($request->service) {
@@ -50,17 +67,75 @@ class AppointmentTrackingController extends Controller
         }
     }
 
-    // 🔎 NEW: Reference number search
+
+    /* 🔎 REFERENCE SEARCH */
+
     if ($request->filled('reference')) {
         $query->where('ReferenceNr', 'like', '%' . $request->reference . '%');
     }
 
+
+    /* 🔹 ORDER */
+
+    $query->orderBy('appointment_date', 'desc');
+
     $appointments = $query->get();
+
+
+    /* 🔹 FALLBACK TO TODAY IF EMPTY */
+
+    if ($appointments->isEmpty() && ($request->filled('from_date') || $request->filled('to_date'))) {
+
+        session()->flash(
+            'warning',
+            'No applications available for the selected date..'
+        );
+
+        // rebuild base query for today
+        $fallbackQuery = Appointment::where('status', Appointment::STATUS_ACCEPTED)
+            ->whereNull('current_assignee_id')
+            ->whereDate('appointment_date', now());
+
+        // preserve service filter
+        if ($request->filled('service')) {
+
+            switch ($request->service) {
+
+                case 'Passport':
+                    $fallbackQuery->where('service', 'like', 'Passport%');
+                    break;
+
+                case 'Visa':
+                    $fallbackQuery->where('service', 'like', 'Visa%');
+                    break;
+
+                case 'OCI':
+                    $fallbackQuery->where('service', 'like', 'OCI%');
+                    break;
+
+                case 'Miscellaneous':
+                    $fallbackQuery->where(function ($q) {
+                        $q->where('service', 'not like', 'Passport%')
+                          ->where('service', 'not like', 'Visa%')
+                          ->where('service', 'not like', 'OCI%');
+                    });
+                    break;
+            }
+        }
+
+        $appointments = $fallbackQuery
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+    }
+
+
+    /* 🔹 USERS */
 
     $users = User::select('id', 'name')
         ->where('user_type', User::TYPE_NORMAL)
         ->orderBy('name')
         ->get();
+
 
     return view('appointments.stage-assign', compact('appointments', 'users'));
 }

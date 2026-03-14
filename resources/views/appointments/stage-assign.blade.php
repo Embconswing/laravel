@@ -1,344 +1,495 @@
 @extends('layouts.app')
 
 @section('content')
-<style>
-.highlight-row {
-    animation: highlightFade 2s ease;
+    <style>
+        .highlight-row {
+            animation: highlightFade 2s ease;
+        }
+
+        @keyframes highlightFade {
+            0% {
+                background-color: #fff3cd;
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        .scan-toolbar {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: .4px;
+            color: #495057;
+        }
+
+    .service-filter{
+    background:#fff5f5;
+    border:1px solid #f1c6c6;
 }
+    </style>
 
-@keyframes highlightFade {
-    0% { background-color: #fff3cd; }
-    100% { background-color: transparent; }
-}
-</style>
 
-<div class="container-fluid py-3">
+    <div class="container-fluid py-3">
+        <div class="text-center mb-3">
+            <h1 class="fw-bold mb-0">
+                Applications to be Assigned
+                (<span class="text-danger">
+                    {{ $appointments->count() }}
 
-<div class="text-center flex-grow-1">
-<div class="fw-bold fs-5">
-Applications to be Assigned
-</div>
-</div>
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-
-<h4 class="mb-0">
-Accepted Applications (Assign for Processing)
-</h4>
-
-<div class="d-flex align-items-center gap-2">
-
-<span class="text-muted small">
-{{ $appointments->count() }} case(s)
-</span>
+                    {{ \Illuminate\Support\Str::plural('case', $appointments->count()) }}
+                </span> )</h1>
+        </div>
 
-<a href="{{ route('appointments.delete') }}" class="btn btn-sm btn-danger">
-<i class="bi bi-trash3"></i>
-</a>
 
-</div>
-</div>
+        {{-- HEADER --}}
+        <div class="d-flex justify-content-between align-items-center mb-3">
 
 
-@if (session('success'))
-<div class="alert alert-success alert-dismissible fade show">
-{{ session('success') }}
-<button class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
 
-@if (session('error'))
-<div class="alert alert-danger alert-dismissible fade show">
-{{ session('error') }}
-<button class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
 
 
-@php
-$currentService = request('service');
-@endphp
+        </div>
 
-<div class="card shadow-sm mb-3">
-<div class="card-body py-2">
 
-<ul class="nav nav-pills nav-fill">
 
-<li class="nav-item">
-<a class="nav-link {{ !$currentService ? 'active' : '' }}"
-href="{{ route('appointments.assign.index') }}">
-All
-</a>
-</li>
+        {{-- SERVICE FILTER --}}
+        @php
+            $currentService = request('service');
+        @endphp
 
-<li class="nav-item">
-<a class="nav-link {{ $currentService == 'Passport' ? 'active' : '' }}"
-href="{{ route('appointments.assign.index',['service'=>'Passport']) }}">
-Passport
-</a>
-</li>
+       <div class="card shadow-sm mb-3 service-filter">
+            <div class="card-body py-2">
 
-<li class="nav-item">
-<a class="nav-link {{ $currentService == 'Visa' ? 'active' : '' }}"
-href="{{ route('appointments.assign.index',['service'=>'Visa']) }}">
-Visa
-</a>
-</li>
+                <ul class="nav nav-pills nav-fill">
 
-<li class="nav-item">
-<a class="nav-link {{ $currentService == 'OCI' ? 'active' : '' }}"
-href="{{ route('appointments.assign.index',['service'=>'OCI']) }}">
-OCI
-</a>
-</li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ !$currentService ? 'active' : '' }}"
+                            href="{{ route('appointments.assign.index') }}">
+                            All
+                        </a>
+                    </li>
 
-<li class="nav-item">
-<a class="nav-link {{ $currentService == 'Miscellaneous' ? 'active' : '' }}"
-href="{{ route('appointments.assign.index',['service'=>'Miscellaneous']) }}">
-Miscellaneous
-</a>
-</li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentService == 'Passport' ? 'active' : '' }}"
+                            href="{{ route('appointments.assign.index', ['service' => 'Passport']) }}">
+                            Passport
+                        </a>
+                    </li>
 
-</ul>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentService == 'Visa' ? 'active' : '' }}"
+                            href="{{ route('appointments.assign.index', ['service' => 'Visa']) }}">
+                            Visa
+                        </a>
+                    </li>
 
-</div>
-</div>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentService == 'OCI' ? 'active' : '' }}"
+                            href="{{ route('appointments.assign.index', ['service' => 'OCI']) }}">
+                            OCI
+                        </a>
+                    </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentService == 'Miscellaneous' ? 'active' : '' }}"
+                            href="{{ route('appointments.assign.index', ['service' => 'Miscellaneous']) }}">
+                            Miscellaneous
+                        </a>
+                    </li>
 
-<div class="card shadow-sm">
+                </ul>
 
-<form method="POST" action="{{ route('appointments.bulkAssign') }}">
-@csrf
-@method('PATCH')
+            </div>
+        </div>
 
-<div class="card shadow-sm mb-3">
-<div class="card-body">
 
-<input
-type="text"
-id="scanner-input"
-class="form-control"
-placeholder="Scan Reference Number..."
-autofocus
->
 
-<small class="text-muted">
-Scan applications to add them to assignment list
-</small>
+        {{-- DATE FILTER FORM --}}
+        <form id="dateFilterForm" method="GET" action="{{ route('appointments.assign.index') }}">
+            <input type="hidden" name="service" value="{{ request('service') }}">
+        </form>
 
-</div>
-</div>
 
 
-<div class="card-body p-0">
+        <form method="POST" action="{{ route('appointments.bulkAssign') }}">
+            @csrf
+            @method('PATCH')
 
-<div class="table-responsive">
 
-<table class="table table-hover table-striped align-middle mb-0">
+            {{-- SCAN + FILTER TOOLBAR --}}
+            <div class="scan-toolbar mb-3">
 
-<thead class="table-light">
-<tr>
+                <div class="row g-2 align-items-center">
 
-<th>
-<input type="checkbox" id="select-all">
-</th>
+                    {{-- SCANNER --}}
+                    <div class="col-md-4">
+                        <input type="text" id="scanner-input" class="form-control form-control-lg"
+                            placeholder="🔍 Scan Reference Number..." autofocus>
+                    </div>
 
-<th>Reference</th>
-<th>Appointment No</th>
-<th>Appointment Date</th>
-<th>Applicant</th>
-<th>Service</th>
-<th>Status</th>
-<th>Actions</th>
+                    {{-- FROM DATE --}}
+                    <div class="col-md-2">
+                        <input type="date" name="from_date" value="{{ request('from_date') }}"
+                            class="form-control form-control-sm" form="dateFilterForm">
+                    </div>
 
-</tr>
-</thead>
+                    {{-- TO DATE --}}
+                    <div class="col-md-2">
+                        <input type="date" name="to_date" value="{{ request('to_date') }}"
+                            class="form-control form-control-sm" form="dateFilterForm">
+                    </div>
 
+                    {{-- FILTER --}}
+                    <div class="col-md-1 d-grid">
+                        <button class="btn btn-sm btn-outline-primary" form="dateFilterForm">
+                            Filter
+                        </button>
+                    </div>
 
-<tbody id="scan-results">
+                    {{-- RESET --}}
+                    <div class="col-md-1 d-grid">
+                        <a href="{{ route('appointments.assign.index') }}" class="btn btn-sm btn-outline-secondary">
+                            Reset
+                        </a>
+                    </div>
 
-@forelse($appointments as $appointment)
+                    {{-- SELECTED COUNTER --}}
+                    <div class="col-md-2 text-end small text-muted">
 
-<tr data-appointment-id="{{ $appointment->id }}">
 
-<td>
-<input
-type="checkbox"
-name="appointment_ids[]"
-value="{{ $appointment->id }}"
-class="appointment-checkbox">
-</td>
+                        Selected:
+                        <strong class="selected-count">0</strong>
 
-<td>
-<span class="badge bg-dark reference-text">
-{{ $appointment->ReferenceNr }}
-</span>
-</td>
 
-<td>{{ $appointment->appointment_no }}</td>
 
-<td>{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('d-m-Y') }}</td>
+                    </div>
 
-<td>{{ $appointment->applicant_name }}</td>
+                </div>
 
-<td>{{ $appointment->service }}</td>
+            </div>
 
-<td>
-<span class="badge bg-success">
-Application accepted
-</span>
-</td>
 
-<td>
-<button type="button" class="btn btn-sm btn-outline-secondary edit-ref">✏️</button>
-<button type="button" class="btn btn-sm btn-outline-danger remove-row">❌</button>
-</td>
 
-</tr>
+            <div class="card shadow-sm">
 
-@empty
+                @if (session('warning'))
+                    <div class="alert alert-warning alert-dismissible fade show">
+                        {{ session('warning') }}
+                        <button class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
 
-<tr>
-<td colspan="8" class="text-center text-muted">
-No applications found.
-</td>
-</tr>
 
-@endforelse
 
-</tbody>
+                <div class="table-responsive">
 
-</table>
+                    <table class="table table-hover align-middle mb-0">
 
-</div>
-</div>
+                        <thead class="table-light">
 
+                            <tr>
 
-<div class="card-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                                <th width="40">
+                                    <input type="checkbox" id="select-all">
+                                </th>
 
-<div class="me-auto">
-<small class="text-muted">
-Selected: <span id="selected-count">0</span> application(s)
-</small>
-</div>
+                                <th>Reference</th>
+                                <th>Appointment No</th>
+                                <th>Date</th>
+                                <th>Applicant</th>
+                                <th>Service</th>
+                                <th>Status</th>
+                                <th width="120">Actions</th>
 
-<select name="current_assignee_id" class="form-select w-auto" required>
+                            </tr>
 
-<option value="">— Assign to User —</option>
+                        </thead>
 
-@foreach ($users as $user)
-@if ($user->id !== auth()->id())
-<option value="{{ $user->id }}">
-{{ $user->name }}
-</option>
-@endif
-@endforeach
 
-</select>
 
-<button type="submit" class="btn btn-primary">
-Assign Selected
-</button>
+                        {{-- SCANNED SECTION --}}
+                        <tbody id="scanned-results">
 
-</div>
+                            <tr class="table-warning">
+                                <td colspan="8" class="section-title">
+                                    Scanned Applications
+                                    (<span id="scanned-count">0</span>)
+                                </td>
+                            </tr>
 
-</form>
-</div>
+                            <tr id="no-scanned-row">
+                                <td colspan="8" class="text-center text-muted py-3">
+                                    No scanned applications yet
+                                </td>
+                            </tr>
 
+                        </tbody>
 
 
 
+                        {{-- NORMAL SECTION --}}
+                        <tbody id="normal-results">
 
-</div>
+                            <tr class="table-light">
+                                <td colspan="8" class="section-title">
+                                    Available Applications
+                                </td>
+                            </tr>
+
+
+                            @forelse($appointments as $appointment)
+                                <tr data-appointment-id="{{ $appointment->id }}">
+
+                                    <td>
+                                        <input type="checkbox" name="appointment_ids[]" value="{{ $appointment->id }}"
+                                            class="appointment-checkbox">
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-dark reference-text">
+                                            {{ $appointment->ReferenceNr }}
+                                        </span>
+                                    </td>
+
+                                    <td>{{ $appointment->appointment_no }}</td>
+
+                                    <td>{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('d-m-Y') }}</td>
+
+                                    <td>{{ $appointment->applicant_name }}</td>
+
+                                    <td>{{ $appointment->service }}</td>
+
+                                    <td>
+                                        <span class="badge bg-success">
+                                            Accepted
+                                        </span>
+                                    </td>
+
+                                    <td>
+
+                                        <button type="button" class="btn btn-sm btn-outline-secondary edit-ref">
+                                            ✏️
+                                        </button>
+
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-row">
+                                            ❌
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                            @empty
+
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">
+                                        No applications found
+                                    </td>
+                                </tr>
+                            @endforelse
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+
+                <div class="card-footer d-flex justify-content-between align-items-center">
+
+                    {{-- LEFT SIDE --}}
+
+                    <div class="small text-muted">
+                        Selected:
+                        <strong class="selected-count">0</strong>
+                    </div>
+
+
+                    {{-- RIGHT SIDE --}}
+                    <div class="d-flex align-items-center gap-2">
+
+                        <select name="current_assignee_id" class="form-select w-auto" required>
+
+                            <option value="">Assign to User</option>
+
+                            @foreach ($users as $user)
+                                @if ($user->id !== auth()->id())
+                                    <option value="{{ $user->id }}">
+                                        {{ $user->name }}
+                                    </option>
+                                @endif
+                            @endforeach
+
+                        </select>
+
+                        <button class="btn btn-primary">
+                            Assign Selected
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
 @endsection
 
 
 
 @push('scripts')
-<script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
 
-document.addEventListener("DOMContentLoaded", function(){
+            const scanner = document.getElementById("scanner-input");
+            const scannedTable = document.getElementById("scanned-results");
+            const selectedCount = document.getElementById("selected-count");
+            const selectAll = document.getElementById("select-all");
 
-const scanner=document.getElementById("scanner-input");
-const table=document.getElementById("scan-results");
-const selectedCount=document.getElementById("selected-count");
+            const scanSound = new Audio("/sounds/scan.mp3");
 
-const scanSound=new Audio("/sounds/scan.mp3");
+            let scanned = [];
 
-let scanned=[];
 
-function updateCount(){
-selectedCount.textContent=scanned.length;
-}
 
-scanner.addEventListener("keypress",function(e){
+            function updateCount() {
 
-if(e.key==="Enter"){
+                const checked = document.querySelectorAll(
+                    'input[name="appointment_ids[]"]:checked'
+                );
 
-e.preventDefault();
+                document.querySelectorAll(".selected-count").forEach(el => {
+                    el.textContent = checked.length;
+                });
 
-const reference=scanner.value.trim();
-if(!reference) return;
+            }
 
-fetch("{{ route('appointments.findByReference') }}?reference="+reference)
 
-.then(res=>res.json())
 
-.then(data=>{
+            selectAll.addEventListener("change", function() {
 
-if(!data.success){
-alert(data.message);
-scanner.value="";
-return;
-}
+                document
+                    .querySelectorAll('input[name="appointment_ids[]"]')
+                    .forEach(cb => cb.checked = selectAll.checked);
 
-if(scanned.includes(data.appointment.id)){
-alert("Already scanned.");
-scanner.value="";
-return;
-}
+                updateCount();
 
-const existingRow=document.querySelector(
-`[data-appointment-id="${data.appointment.id}"]`
-);
+            });
 
-if(existingRow){
 
-const checkbox=existingRow.querySelector(
-'input[name="appointment_ids[]"]'
-);
 
-checkbox.checked=true;
-existingRow.classList.add("highlight-row");
+            document.addEventListener("change", function(e) {
 
-}else{
+                if (e.target.name === "appointment_ids[]") {
+                    updateCount();
+                }
 
-const row=document.createElement("tr");
-row.dataset.appointmentId=data.appointment.id;
-row.classList.add("highlight-row");
+            });
 
-row.innerHTML=`
+
+
+            scanner.addEventListener("keydown", function(e) {
+
+                if (e.key === "Enter") {
+
+                    e.preventDefault();
+
+                    const reference = scanner.value.trim();
+
+                    if (!reference) return;
+
+
+                    fetch("{{ route('appointments.findByReference') }}?reference=" + reference)
+
+                        .then(res => res.json())
+
+                        .then(data => {
+
+                            if (!data.success) {
+
+                                alert(data.message);
+                                scanner.value = "";
+                                scanner.focus();
+                                return;
+
+                            }
+
+
+                            const appointment = data.appointment;
+
+
+                            if (scanned.includes(appointment.id)) {
+
+                                alert("Already scanned.");
+                                scanner.value = "";
+                                scanner.focus();
+                                return;
+
+                            }
+
+
+                            const existingRow =
+                                document.querySelector(
+                                    `tr[data-appointment-id="${appointment.id}"]`
+                                );
+
+
+                            if (existingRow) {
+
+                                const checkbox =
+                                    existingRow.querySelector(
+                                        'input[name="appointment_ids[]"]'
+                                    );
+
+                                checkbox.checked = true;
+
+                                existingRow.classList.add("highlight-row");
+
+                                existingRow.children[6].innerHTML =
+                                    `<span class="badge bg-warning">Scanned</span>`;
+
+                                scannedTable.prepend(existingRow);
+
+                            } else {
+
+                                const row = document.createElement("tr");
+
+                                row.dataset.appointmentId = appointment.id;
+
+                                row.classList.add("highlight-row");
+
+                                row.innerHTML = `
 
 <td>
 <input type="checkbox"
 name="appointment_ids[]"
-value="${data.appointment.id}"
+value="${appointment.id}"
 checked>
 </td>
 
 <td>
 <span class="badge bg-dark reference-text">
-${data.appointment.reference}
+${appointment.ReferenceNr}
 </span>
 </td>
 
-<td>${data.appointment.appointment_no}</td>
+<td>${appointment.appointment_no}</td>
 
-<td>${formatDate(data.appointment.appointment_date)}</td>
+<td>${formatDate(appointment.appointment_date)}</td>
 
-<td>${data.appointment.applicant_name}</td>
+<td>${appointment.applicant_name}</td>
 
-<td>${data.appointment.service}</td>
+<td>${appointment.service}</td>
 
 <td>
 <span class="badge bg-warning">
@@ -350,105 +501,157 @@ Scanned
 <button type="button" class="btn btn-sm btn-outline-secondary edit-ref">✏️</button>
 <button type="button" class="btn btn-sm btn-outline-danger remove-row">❌</button>
 </td>
+
 `;
 
-table.prepend(row);
+                                scannedTable.prepend(row);
 
-}
-
-scanned.push(data.appointment.id);
-
-scanSound.play();
-scanner.value="";
-updateCount();
-
-});
-
-}
-
-});
+                            }
 
 
-function formatDate(dateString){
-
-const date=new Date(dateString);
-
-const day=String(date.getDate()).padStart(2,'0');
-const month=String(date.getMonth()+1).padStart(2,'0');
-const year=date.getFullYear();
-
-return `${day}-${month}-${year}`;
-
-}
+                            const empty = document.getElementById("no-scanned-row");
+                            if (empty) empty.remove();
 
 
-table.addEventListener("click",function(e){
+                            scanned.push(appointment.id);
 
-if(e.target.classList.contains("remove-row")){
+                            scanSound.play();
 
-const row=e.target.closest("tr");
-const id=row.querySelector('input[name="appointment_ids[]"]').value;
+                            scanner.value = "";
 
-scanned=scanned.filter(x=>x!=id);
+                            updateCount();
+                            updateScannedCount();
 
-row.remove();
-updateCount();
+                        })
 
-}
+                        .catch(err => {
+
+                            console.error(err);
+                            alert("Error scanning application.");
+
+                        });
+
+                }
+
+            });
 
 
-if(e.target.classList.contains("edit-ref")){
 
-const row=e.target.closest("tr");
+            function updateScannedCount() {
 
-const appointmentId=row.dataset.appointmentId;
+                const scannedRows =
+                    document.querySelectorAll(
+                        '#scanned-results tr[data-appointment-id]'
+                    );
 
-const refElement=row.querySelector(".reference-text");
+                document
+                    .getElementById("scanned-count")
+                    .textContent = scannedRows.length;
 
-const oldRef=refElement.innerText;
+            }
 
-const newRef=prompt("Edit Reference Number",oldRef);
 
-if(!newRef||newRef===oldRef){
-return;
-}
 
-fetch("{{ route('appointments.updateReferenceAjax') }}",{
+            function formatDate(dateString) {
 
-method:"PATCH",
+                const date = new Date(dateString);
 
-headers:{
-"Content-Type":"application/json",
-"X-CSRF-TOKEN":"{{ csrf_token() }}"
-},
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
 
-body:JSON.stringify({
-appointment_id:appointmentId,
-reference:newRef
-})
+                return `${day}-${month}-${year}`;
 
-})
-.then(res=>res.json())
-.then(data=>{
+            }
 
-if(!data.success){
-alert(data.message);
-return;
-}
 
-document
-.querySelectorAll(`[data-appointment-id="${appointmentId}"] .reference-text`)
-.forEach(el=>{
-el.innerText=data.reference;
-});
 
-});
+            document.addEventListener("click", function(e) {
 
-}
+                if (e.target.classList.contains("remove-row")) {
 
-});
+                    const row = e.target.closest("tr");
 
-});
+                    const id = row.querySelector(
+                        'input[name="appointment_ids[]"]'
+                    ).value;
 
-</script>
+                    scanned = scanned.filter(x => x != id);
+
+                    row.remove();
+
+                    updateCount();
+                    updateScannedCount();
+
+                }
+
+
+
+                if (e.target.classList.contains("edit-ref")) {
+
+                    const row = e.target.closest("tr");
+
+                    const appointmentId = row.dataset.appointmentId;
+
+                    const refElement =
+                        row.querySelector(".reference-text");
+
+                    const oldRef = refElement.innerText;
+
+                    const newRef = prompt(
+                        "Edit Reference Number",
+                        oldRef
+                    );
+
+                    if (!newRef || newRef === oldRef) return;
+
+
+                    fetch("{{ route('appointments.updateReferenceAjax') }}", {
+
+                            method: "PATCH",
+
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                            },
+
+                            body: JSON.stringify({
+
+                                appointment_id: appointmentId,
+                                reference: newRef
+
+                            })
+
+                        })
+
+                        .then(res => res.json())
+
+                        .then(data => {
+
+                            if (!data.success) {
+
+                                alert(data.message);
+                                return;
+
+                            }
+
+                            document
+                                .querySelectorAll(
+                                    `[data-appointment-id="${appointmentId}"] .reference-text`
+                                )
+
+                                .forEach(el => {
+
+                                    el.innerText = data.reference;
+
+                                });
+
+                        });
+
+                }
+
+            });
+
+        });
+    </script>
 @endpush
