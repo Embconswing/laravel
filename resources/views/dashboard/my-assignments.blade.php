@@ -11,6 +11,9 @@
 
     <div class="container py-3">
 
+
+
+
         {{-- ================= HEADER ================= --}}
 
 
@@ -87,6 +90,48 @@
                 </div>
             @endif
             <div class="card shadow-sm">
+                <div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+        <form method="GET" action="{{ route('my.assignments') }}">
+
+            <div class="row g-2 align-items-center">
+
+                {{-- MAIN SEARCH BOX --}}
+                <div class="col-md-8">
+                    <div class="input-group">
+
+                        <span class="input-group-text bg-white">🔍</span>
+
+                        <input
+                            type="text"
+                            name="search"
+                            class="form-control"
+                            placeholder="Search name, email or reference number..."
+                            value="{{ request('search') }}">
+
+                        <button class="btn btn-primary">
+                            Search
+                        </button>
+
+                    </div>
+                </div>
+
+                {{-- RESET BUTTON --}}
+                <div class="col-md-2">
+                    <a href="{{ route('my.assignments') }}"
+                       class="btn btn-outline-secondary w-100">
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0" style="table-layout: fixed;">
                         <thead class="table-light">
@@ -329,56 +374,50 @@
         </div>
     </div>
 
-{{-- ================= CHANGE EMAIL MODAL ================= --}}
-<div id="changeEmailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg w-full max-w-md p-6">
+    {{-- ================= CHANGE EMAIL MODAL ================= --}}
+    <div id="changeEmailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-md p-6">
 
-        <h5 class="fw-bold mb-3">
-            Change Email Address
-        </h5>
+            <h5 class="fw-bold mb-3">
+                Change Email Address
+            </h5>
 
-        <form method="POST" id="changeEmailForm">
-            @csrf
-            @method('PATCH')
+            <form method="POST" id="changeEmailForm">
+                @csrf
+                @method('PATCH')
 
-            <div class="mb-3">
-                <label class="form-label">Current Email</label>
-                <input type="text" id="currentEmail" class="form-control" readonly>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">Current Email</label>
+                    <input type="text" id="currentEmail" class="form-control" readonly>
+                </div>
 
-            <div class="mb-3">
-                <label class="form-label">New Email</label>
-                <input type="email" name="email" class="form-control" required>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">New Email</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
 
-            <div class="mb-3">
-                <label class="form-label">Remark</label>
-                <textarea name="remark"
-                    class="form-control"
-                    rows="3"
-                    required
-                    placeholder="Reason for changing email address..."></textarea>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">Remark</label>
+                    <textarea name="remark" class="form-control" rows="3" required
+                        placeholder="Reason for changing email address..."></textarea>
+                </div>
 
-            <div class="d-flex justify-content-end gap-2">
+                <div class="d-flex justify-content-end gap-2">
 
-                <button type="button"
-                    onclick="closeChangeEmailModal()"
-                    class="btn btn-secondary">
-                    Cancel
-                </button>
+                    <button type="button" onclick="closeChangeEmailModal()" class="btn btn-secondary">
+                        Cancel
+                    </button>
 
-                <button type="submit"
-                    class="btn btn-primary">
-                    Update Email
-                </button>
+                    <button type="submit" class="btn btn-primary">
+                        Update Email
+                    </button>
 
-            </div>
+                </div>
 
-        </form>
+            </form>
 
+        </div>
     </div>
-</div>
 
 
     {{-- ================= CHANGE REF NO MODAL ================= --}}
@@ -574,23 +613,23 @@
         }
 
 
-function openChangeEmailModal(id, currentEmail) {
+        function openChangeEmailModal(id, currentEmail) {
 
-    const form = document.getElementById('changeEmailForm');
+            const form = document.getElementById('changeEmailForm');
 
-    form.action = `/appointments/${id}/change-email`;
+            form.action = `/appointments/${id}/change-email`;
 
-    document.getElementById('currentEmail').value = currentEmail;
+            document.getElementById('currentEmail').value = currentEmail;
 
-    document.getElementById('changeEmailModal').classList.remove('hidden');
-    document.getElementById('changeEmailModal').classList.add('flex');
-}
+            document.getElementById('changeEmailModal').classList.remove('hidden');
+            document.getElementById('changeEmailModal').classList.add('flex');
+        }
 
-function closeChangeEmailModal() {
+        function closeChangeEmailModal() {
 
-    document.getElementById('changeEmailModal').classList.add('hidden');
-    document.getElementById('changeEmailModal').classList.remove('flex');
-}
+            document.getElementById('changeEmailModal').classList.add('hidden');
+            document.getElementById('changeEmailModal').classList.remove('flex');
+        }
     </script>
 
 @endsection

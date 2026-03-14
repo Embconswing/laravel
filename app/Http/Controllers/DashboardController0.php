@@ -11,7 +11,7 @@ class DashboardController extends Controller
     /**
      * Show applications assigned to the logged-in user
      */
-    public function myAssignments(Request $request)
+   public function myAssignments()
     {
         $user = auth()->user();
 
@@ -37,25 +37,6 @@ class DashboardController extends Controller
             $query->where(function ($q) use ($user) {
                 $q->where('current_assignee_id', $user->id)
                   ->orWhere('status', Appointment::STATUS_RETURNED_TO_SUPERVISOR);
-            });
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 🔎 SEARCH FILTER
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->search) {
-
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-
-                $q->where('applicant_name', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%")
-                  ->orWhere('ReferenceNr', 'like', "%$search%")
-                  ->orWhere('appointment_no', 'like', "%$search%");
             });
         }
 
@@ -125,4 +106,7 @@ class DashboardController extends Controller
             'cancelled'
         ));
     }
+
+
+
 }
